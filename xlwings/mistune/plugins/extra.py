@@ -30,7 +30,7 @@ def parse_strikethrough(inline, m, state):
 
 
 def render_html_strikethrough(text):
-    return '<del>' + text + '</del>'
+    return f'<del>{text}</del>'
 
 
 def plugin_strikethrough(md):

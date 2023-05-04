@@ -68,11 +68,7 @@ data = {
 
 @pytest.fixture(scope="module")
 def book():
-    if engine == "json":
-        book = xw.Book(json=data)
-    else:
-        book = xw.Book("json.xlsx")
-    yield book
+    yield xw.Book(json=data) if engine == "json" else xw.Book("json.xlsx")
 
 
 # range.value
@@ -326,9 +322,7 @@ def test_pictures_add_and_delete(book):
 
 def test_pictures_iter(book):
     sheet = book.sheets[0]
-    pic_names = []
-    for pic in sheet.pictures:
-        pic_names.append(pic.name)
+    pic_names = [pic.name for pic in sheet.pictures]
     assert pic_names == ["pic1", "pic2"]
 
 

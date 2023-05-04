@@ -153,7 +153,7 @@ class XLPython:
 
     def Module(self, module, reload=False):
         vars = {}
-        exec("import " + module + " as the_module", vars)
+        exec(f"import {module} as the_module", vars)
         m = vars["the_module"]
         if reload:
             m = importlib.reload(m)
@@ -171,7 +171,7 @@ class XLPython:
     def Dict(self, *kvpairs):
         if len(kvpairs) % 2 != 0:
             raise Exception("Arguments must be alternating keys and values.")
-        n = int(len(kvpairs) / 2)
+        n = len(kvpairs) // 2
         d = {}
         for k in range(n):
             key = FromVariant(kvpairs[2 * k])
@@ -183,7 +183,7 @@ class XLPython:
         return self.List(*elements)
 
     def List(self, *elements):
-        return ToVariant(list((FromVariant(e) for e in elements)))
+        return ToVariant([FromVariant(e) for e in elements])
 
     def Obj(self, var, dispatch=True):
         return ToVariant(FromVariant(var, dispatch))
@@ -199,12 +199,7 @@ class XLPython:
                 value = tuple(value.items())
             elif t.__name__ == "ndarray" and t.__module__ == "numpy":
                 value = value.tolist()
-        if type(value) is tuple:
-            return (value,)
-        # elif isinstance(value, types.InstanceType) and value.__class__ is win32com.client.CDispatch:
-        # return value._oleobj_
-        else:
-            return value
+        return (value, ) if type(value) is tuple else value
 
     def Call(self, obj, *args):
         obj = FromVariant(obj)
@@ -228,10 +223,11 @@ class XLPython:
     def CallUDF(self, script, fname, args, this_workbook=None, caller=None):
         args = tuple(FromVariant(arg) for arg in args)
         res = call_udf(script, fname, args, this_workbook, FromVariant(caller))
-        if len(res) == 1 and len(res[0]) == 1:
-            res = res[0][0]
-        elif len(res) == 1 and len(res[0]) > 1:
-            res = res[0]
+        if len(res) == 1:
+            if len(res[0]) == 1:
+                res = res[0][0]
+            elif len(res[0]) > 1:
+                res = res[0]
         return res
 
     def Len(self, obj):
@@ -239,11 +235,7 @@ class XLPython:
         return len(obj)
 
     def Bool(self, obj):
-        obj = FromVariant(obj)
-        if obj:
-            return True
-        else:
-            return False
+        return bool(obj := FromVariant(obj))
 
     def Builtin(self):
         import builtins
@@ -300,8 +292,6 @@ class XLPython:
                     raise Exception(
                         "Eval can be called with at most 2 dictionary arguments"
                     )
-            else:
-                pass
         return ToVariant(eval(expr, globals, locals))
 
     def Exec(self, stmt, *args):
@@ -318,8 +308,6 @@ class XLPython:
                     raise Exception(
                         "Exec can be called with at most 2 dictionary arguments"
                     )
-            else:
-                pass
         exec(stmt, globals, locals)
 
 
@@ -372,9 +360,8 @@ def serve(clsid="{506e67c3-55b5-48c3-a035-eed5deea7d6d}"):
         rc = win32event.MsgWaitForMultipleObjects(
             (), 0, win32event.INFINITE, win32event.QS_ALLEVENTS
         )
-        if rc == win32event.WAIT_OBJECT_0:
-            if pythoncom.PumpWaitingMessages():
-                break  # wm_quit
+        if rc == win32event.WAIT_OBJECT_0 and pythoncom.PumpWaitingMessages():
+            break  # wm_quit
 
     pythoncom.CoRevokeClassObject(revokeId)
     pythoncom.CoUninitialize()

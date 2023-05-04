@@ -75,10 +75,7 @@ def fontcolor(value=None, filter_list=None):
         # If called from a single cell/shape placeholder
         color = _get_filter_value(filter_list, "fontcolor")
         colors = {"white": "#ffffff", "black": "#000000"}
-        if color.lower() in colors:
-            return colors[color.lower()]
-        else:
-            return color
+        return colors.get(color.lower(), color)
 
 
 # DataFrame filters
@@ -173,15 +170,11 @@ def aggsmall(df, filter_args):
 
 
 def head(df, filter_args):
-    if df.empty:
-        return df
-    return df.head(filter_args[0].as_const())
+    return df if df.empty else df.head(filter_args[0].as_const())
 
 
 def tail(df, filter_args):
-    if df.empty:
-        return df
-    return df.tail(filter_args[0].as_const())
+    return df if df.empty else df.tail(filter_args[0].as_const())
 
 
 def rowslice(df, filter_args):

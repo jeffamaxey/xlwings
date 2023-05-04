@@ -16,9 +16,9 @@ def main():
     file_name = "fibonacci_standalone"
     if os.path.isfile(file_name):
         os.remove(file_name)
-    call("7z a -tzip {}.zip fibonacci.xlsm".format(file_name))
-    call("7z a -tzip {}.zip LICENSE.txt".format(file_name))
-    call("7z a -tzip {}.zip build".format(file_name))
+    call(f"7z a -tzip {file_name}.zip fibonacci.xlsm")
+    call(f"7z a -tzip {file_name}.zip LICENSE.txt")
+    call(f"7z a -tzip {file_name}.zip build")
 
 
 if __name__ == "__main__":

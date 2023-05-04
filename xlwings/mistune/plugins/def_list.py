@@ -27,11 +27,11 @@ def render_html_def_list(text):
 
 
 def render_html_def_list_header(text):
-    return "<dt>" + text + "</dt>\n"
+    return f"<dt>{text}" + "</dt>\n"
 
 
 def render_html_def_list_item(text):
-    return "<dd>" + text + "</dd>\n"
+    return f"<dd>{text}" + "</dd>\n"
 
 
 def render_ast_def_list_header(text):

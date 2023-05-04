@@ -40,7 +40,7 @@ def verify_execute_permission(command=None, module_names=None):
         assert not command
     else:
         raise ValueError("You must either provide command or module_names!")
-    file_names = [module + ".py" for module in module_names]
+    file_names = [f"{module}.py" for module in module_names]
     file_hashes = {}
     for fn in file_names:
         for path in sys.path:
@@ -73,16 +73,16 @@ def verify_execute_permission(command=None, module_names=None):
                         or "*" in module["machine_names"]
                         or socket.gethostname() in module["machine_names"]
                     )
-                    if correct_sha256 and permitted_machine:
-                        checked_files.append(file_name)
-                        break
-                    else:
+                    if not correct_sha256 or not permitted_machine:
                         raise XlwingsError(
                             f"Failed to get permission for the following file: "
                             f"{file_name}"
                         )
-        missing_permissions = set(file_names).difference(set(checked_files))
-        if missing_permissions:
+                    checked_files.append(file_name)
+                    break
+        if missing_permissions := set(file_names).difference(
+            set(checked_files)
+        ):
             raise XlwingsError(
                 f"Failed to get permission for the following file(s): "
                 f"{', '.join(missing_permissions)}"

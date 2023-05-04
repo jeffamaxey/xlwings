@@ -46,7 +46,7 @@ if np:
 
 
 def _clean_value_data_element(value, datetime_builder, empty_as, number_builder):
-    if value == "" or value == kw.missing_value:
+    if value in ["", kw.missing_value]:
         return empty_as
     if isinstance(value, dt.datetime) and datetime_builder is not dt.datetime:
         value = datetime_builder(
@@ -376,8 +376,7 @@ class Books:
         if self.app.visible:
             self.app.activate()
         xl = self.app.xl.make(new=kw.workbook)
-        wb = Book(self.app, xl.name.get())
-        return wb
+        return Book(self.app, xl.name.get())
 
     def open(
         self,
@@ -431,8 +430,7 @@ class Books:
             add_to_mru=add_to_mru,
             timeout=-1,
         )
-        wb = Book(self.app, filename)
-        return wb
+        return Book(self.app, filename)
 
     def __iter__(self):
         n = len(self)
@@ -503,7 +501,7 @@ class Book:
             self.xl = self.app.xl.workbooks[save_as_name]
         elif (saved_path == "") and (path is None):
             # Previously unsaved: Save under current name in current working directory
-            save_as_name = self.xl.name.get() + ".xlsx"
+            save_as_name = f"{self.xl.name.get()}.xlsx"
             path = os.path.join(os.getcwd(), save_as_name)
             hfs_path = posix_to_hfs_path(os.path.realpath(path))
             self.xl.save_workbook_as(
@@ -586,10 +584,7 @@ class Sheets:
     def add(self, before=None, after=None):
         if before is None and after is None:
             before = self.workbook.app.books.active.sheets.active
-        if before:
-            position = before.xl.before
-        else:
-            position = after.xl.after
+        position = before.xl.before if before else after.xl.after
         xl = self.workbook.xl.make(new=kw.worksheet, at=position)
         return Sheet(self.workbook, xl.name.get())
 
@@ -700,9 +695,9 @@ class Sheet:
         address = self.range((1, 1), (num_rows, num_columns)).address
         alerts_state = self.book.app.screen_updating
         self.book.app.screen_updating = False
-        if axis == "rows" or axis == "r":
+        if axis in ["rows", "r"]:
             self.xl.rows[address].autofit()
-        elif axis == "columns" or axis == "c":
+        elif axis in ["columns", "c"]:
             self.xl.columns[address].autofit()
         elif axis is None:
             self.xl.rows[address].autofit()
@@ -744,7 +739,7 @@ class Sheet:
 
     @property
     def visible(self):
-        return True if self.xl.visible.get() == kw.sheet_visible else False
+        return self.xl.visible.get() == kw.sheet_visible
 
     @visible.setter
     def visible(self, value):
@@ -761,18 +756,13 @@ class Range:
         if isinstance(address, tuple):
             self._coords = address
             row, col, nrows, ncols = address
-            if nrows and ncols:
-                self.xl = sheet.xl.cells[
-                    "%s:%s"
-                    % (
-                        sheet.xl.rows[row].columns[col].get_address(),
-                        sheet.xl.rows[row + nrows - 1]
-                        .columns[col + ncols - 1]
-                        .get_address(),
-                    )
+            self.xl = (
+                sheet.xl.cells[
+                    f"{sheet.xl.rows[row].columns[col].get_address()}:{sheet.xl.rows[row + nrows - 1].columns[col + ncols - 1].get_address()}"
                 ]
-            else:
-                self.xl = None
+                if nrows and ncols
+                else None
+            )
         else:
             self.xl = sheet.xl.cells[address]
             self._coords = None
@@ -879,11 +869,10 @@ class Range:
 
     @property
     def column_width(self):
-        if self.xl is not None:
-            rv = self.xl.column_width.get()
-            return None if rv == kw.missing_value else rv
-        else:
+        if self.xl is None:
             return 0
+        rv = self.xl.column_width.get()
+        return None if rv == kw.missing_value else rv
 
     @column_width.setter
     def column_width(self, value):
@@ -892,11 +881,10 @@ class Range:
 
     @property
     def row_height(self):
-        if self.xl is not None:
-            rv = self.xl.row_height.get()
-            return None if rv == kw.missing_value else rv
-        else:
+        if self.xl is None:
             return 0
+        rv = self.xl.row_height.get()
+        return None if rv == kw.missing_value else rv
 
     @row_height.setter
     def row_height(self, value):
@@ -905,17 +893,11 @@ class Range:
 
     @property
     def width(self):
-        if self.xl is not None:
-            return self.xl.width.get()
-        else:
-            return 0
+        return self.xl.width.get() if self.xl is not None else 0
 
     @property
     def height(self):
-        if self.xl is not None:
-            return self.xl.height.get()
-        else:
-            return 0
+        return self.xl.height.get() if self.xl is not None else 0
 
     @property
     def left(self):
@@ -956,27 +938,27 @@ class Range:
     def address(self):
         if self.xl is not None:
             return self.xl.get_address()
-        else:
-            row, col, nrows, ncols = self.coords
-            return "$%s$%s{%sx%s}" % (col_name(col), row, nrows, ncols)
+        row, col, nrows, ncols = self.coords
+        return "$%s$%s{%sx%s}" % (col_name(col), row, nrows, ncols)
 
     @property
     def current_region(self):
         return Range(self.sheet, self.xl.current_region.get_address())
 
     def autofit(self, axis=None):
-        if self.xl is not None:
-            address = self.address
-            alerts_state = self.sheet.book.app.screen_updating
-            self.sheet.book.app.screen_updating = False
-            if axis == "rows" or axis == "r":
-                self.sheet.xl.rows[address].autofit()
-            elif axis == "columns" or axis == "c":
-                self.sheet.xl.columns[address].autofit()
-            elif axis is None:
-                self.sheet.xl.rows[address].autofit()
-                self.sheet.xl.columns[address].autofit()
-            self.sheet.book.app.screen_updating = alerts_state
+        if self.xl is None:
+            return
+        address = self.address
+        alerts_state = self.sheet.book.app.screen_updating
+        self.sheet.book.app.screen_updating = False
+        if axis in ["rows", "r"]:
+            self.sheet.xl.rows[address].autofit()
+        elif axis in ["columns", "c"]:
+            self.sheet.xl.columns[address].autofit()
+        elif axis is None:
+            self.sheet.xl.rows[address].autofit()
+            self.sheet.xl.columns[address].autofit()
+        self.sheet.book.app.screen_updating = alerts_state
 
     def insert(self, shift=None, copy_origin=None):
         # copy_origin is not supported on mac
@@ -1068,10 +1050,7 @@ class Range:
         if not self.xl:
             return None
         xl = self.xl.named_item
-        if xl.get() == kw.missing_value:
-            return None
-        else:
-            return Name(self.sheet.book, xl=xl)
+        return None if xl.get() == kw.missing_value else Name(self.sheet.book, xl=xl)
 
     @name.setter
     def name(self, value):
@@ -1079,17 +1058,16 @@ class Range:
             self.xl.name.set(value)
 
     def __call__(self, arg1, arg2=None):
-        if arg2 is None:
-            col = (arg1 - 1) % self.shape[1]
-            row = int((arg1 - 1 - col) / self.shape[1])
-            return self(1 + row, 1 + col)
-        else:
+        if arg2 is not None:
             return Range(
                 self.sheet,
                 self.sheet.xl.rows[self.row + arg1 - 1]
                 .columns[self.column + arg2 - 1]
                 .get_address(),
             )
+        col = (arg1 - 1) % self.shape[1]
+        row = int((arg1 - 1 - col) / self.shape[1])
+        return self(1 + row, 1 + col)
 
     @property
     def rows(self):
@@ -1390,10 +1368,7 @@ class PageSetup:
     @property
     def print_area(self):
         value = self.xl.print_area.get()
-        if value == kw.missing_value:
-            return None
-        else:
-            return self.xl.print_area.get()
+        return None if value == kw.missing_value else self.xl.print_area.get()
 
     @print_area.setter
     def print_area(self, value):
@@ -1628,10 +1603,7 @@ class Chart:
 
     @property
     def name(self):
-        if self.xl_obj is not None:
-            return self.xl_obj.name.get()
-        else:
-            return self.xl.name.get()
+        return self.xl.name.get() if self.xl_obj is None else self.xl_obj.name.get()
 
     @name.setter
     def name(self, value):
@@ -1891,10 +1863,7 @@ class Names:
 
     def __len__(self):
         named_items = self.xl.get()
-        if named_items == kw.missing_value:
-            return 0
-        else:
-            return len(named_items)
+        return 0 if named_items == kw.missing_value else len(named_items)
 
     def add(self, name, refers_to):
         return Name(
@@ -1936,7 +1905,7 @@ class Name:
         book = self.parent if isinstance(self.parent, Book) else self.parent.book
         external_address = self.xl.reference_range.get_address(external=True)
         match = re.search(r"\](.*?)'?!(.*)", external_address)
-        return Range(Sheet(book, match.group(1)), match.group(2))
+        return Range(Sheet(book, match[1]), match[2])
 
 
 class Shapes(Collection):
@@ -1972,7 +1941,7 @@ def posix_to_hfs_path(posix_path):
     """
     dir_name, file_name = os.path.split(posix_path)
     dir_name_hfs = mactypes.Alias(dir_name).hfspath
-    return dir_name_hfs + ":" + file_name
+    return f"{dir_name_hfs}:{file_name}"
 
 
 def hfs_to_posix_path(hfs_path):

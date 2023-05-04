@@ -159,7 +159,7 @@ class TestSheet(TestBase):
         original_name = self.wb1.sheets[0].name
         self.wb1.sheets[0]["A1"].value = "xyz"
         self.wb1.sheets[0].copy()
-        self.assertEqual(self.wb1.sheets[-1].name, original_name + " (2)")
+        self.assertEqual(self.wb1.sheets[-1].name, f"{original_name} (2)")
         self.assertEqual(self.wb1.sheets[-1]["A1"].value, "xyz")
 
     def test_sheet_copy_with_before_and_after(self):

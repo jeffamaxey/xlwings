@@ -121,7 +121,7 @@ class InlineParser(ScannerParser):
         text = m.group(1)
         schemes = ('mailto:', 'http://', 'https://')
         if '@' in text and not text.lower().startswith(schemes):
-            link = 'mailto:' + text
+            link = f'mailto:{text}'
         else:
             link = text
         return 'link', escape_url(link), text
@@ -202,11 +202,10 @@ class InlineParser(ScannerParser):
         if rules is None:
             rules = self.rules
 
-        tokens = (
+        return (
             self.renderer._get_method(t[0])(*t[1:])
             for t in self._scan(s, state, rules)
         )
-        return tokens
 
     def render(self, s, state, rules=None):
         tokens = self.parse(s, state, rules)

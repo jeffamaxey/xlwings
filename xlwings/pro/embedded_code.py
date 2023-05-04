@@ -46,7 +46,7 @@ def dump_embedded_code(book, target_dir):
                         f.write("\n")
                     else:
                         f.write(row + "\n")
-    sys.path[0:0] = [target_dir]
+    sys.path[:0] = [target_dir]
 
 
 def runpython_embedded_code(command):

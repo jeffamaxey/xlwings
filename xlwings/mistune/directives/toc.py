@@ -22,8 +22,7 @@ class DirectiveToc(Directive):
     def parse(self, block, m, state):
         title = m.group('value')
         depth = None
-        options = self.parse_options(m)
-        if options:
+        if options := self.parse_options(m):
             depth = dict(options).get('depth')
             if depth:
                 try:
@@ -104,14 +103,14 @@ def render_ast_theading(children, level, tid):
 def render_html_toc(items, title, depth):
     html = '<section class="toc">\n'
     if title:
-        html += '<h1>' + title + '</h1>\n'
+        html += f'<h1>{title}' + '</h1>\n'
 
     return html + render_toc_ul(items) + '</section>\n'
 
 
 def render_html_theading(text, level, tid):
-    tag = 'h' + str(level)
-    return '<' + tag + ' id="' + tid + '">' + text + '</' + tag + '>\n'
+    tag = f'h{str(level)}'
+    return f'<{tag} id="{tid}">{text}</{tag}' + '>\n'
 
 
 def extract_toc_items(md, s):
@@ -130,9 +129,11 @@ def extract_toc_items(md, s):
     s, state = md.before_parse(s, {})
     md.block.parse(s, state)
     headings = state.get('toc_headings')
-    if not headings:
-        return []
-    return list(_cleanup_headings_text(md.inline, headings, state))
+    return (
+        list(_cleanup_headings_text(md.inline, headings, state))
+        if headings
+        else []
+    )
 
 
 def render_toc_ul(toc):
@@ -158,9 +159,9 @@ def render_toc_ul(toc):
     s = '<ul>\n'
     levels = []
     for k, text, level in toc:
-        item = '<a href="#{}">{}</a>'.format(k, text)
+        item = f'<a href="#{k}">{text}</a>'
         if not levels:
-            s += '<li>' + item
+            s += f'<li>{item}'
             levels.append(level)
         elif level == levels[-1]:
             s += '</li>\n<li>' + item
@@ -177,8 +178,7 @@ def render_toc_ul(toc):
                     break
                 elif level > last_level:
                     s += '</li>\n<li>' + item
-                    levels.append(last_level)
-                    levels.append(level)
+                    levels.extend((last_level, level))
                     break
                 else:
                     s += '</li>\n</ul>\n'
@@ -209,7 +209,4 @@ def _inline_token_text(token):
     if len(token) == 2:
         return token[1]
 
-    if tok_type in {'image', 'link'}:
-        return token[2]
-
-    return ''
+    return token[2] if tok_type in {'image', 'link'} else ''

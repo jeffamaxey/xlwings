@@ -19,13 +19,11 @@ if pd:
             # which requires column header names. Since Excel tables only allow an empty
             # space once, we'll generate multiple empty spaces for each column.
             index_names = [
-                f" " * (i + 1) if name is None else name
+                " " * (i + 1) if name is None else name
                 for i, name in enumerate(index_names)
             ]
         else:
             index_names = ["" if name is None else name for name in index_names]
-        index_levels = len(index_names)
-
         if index:
             if value.index.name in value.columns:
                 # Prevents column name collision when resetting the index
@@ -41,6 +39,8 @@ if pd:
                 value.iloc[:, ix] = value.iloc[:, ix].astype(str)
 
         if header:
+            index_levels = len(index_names)
+
             if isinstance(value.columns, pd.MultiIndex):
                 columns = list(zip(*value.columns.tolist()))
                 columns = [list(i) for i in columns]
@@ -99,11 +99,7 @@ if pd:
                     value[header - 1][:index] if header else [None] * index
                 )
 
-                if header:
-                    df.columns = columns[index:]
-                else:
-                    df.columns = pd.Index(range(len(df.columns)))
-
+                df.columns = columns[index:] if header else pd.Index(range(len(df.columns)))
             return df
 
         @classmethod
@@ -141,11 +137,7 @@ if pd:
                     value[header - 1][:index] if header else [None] * index
                 )
 
-            if header:
-                df.columns = columns[index:]
-            else:
-                df.columns = pd.Index(range(len(df.columns)))
-
+            df.columns = columns[index:] if header else pd.Index(range(len(df.columns)))
             series = df.squeeze()
 
             if not header:
@@ -156,13 +148,10 @@ if pd:
 
         @classmethod
         def write_value(cls, value, options):
-            if all(v is None for v in value.index.names) and value.name is None:
-                default_header = False
-            else:
-                default_header = True
-
+            default_header = (
+                any(v is not None for v in value.index.names) or value.name is not None
+            )
             options["header"] = options.get("header", default_header)
-            values = write_value(cls, value.to_frame(), options)
-            return values
+            return write_value(cls, value.to_frame(), options)
 
     PandasSeriesConverter.register(pd.Series)

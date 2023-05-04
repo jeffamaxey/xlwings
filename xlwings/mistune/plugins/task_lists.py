@@ -24,17 +24,13 @@ def render_html_task_list_item(text, level, checked):
         '<input class="task-list-item-checkbox" '
         'type="checkbox" disabled'
     )
-    if checked:
-        checkbox += ' checked/>'
-    else:
-        checkbox += '/>'
-
+    checkbox += ' checked/>' if checked else '/>'
     if text.startswith('<p>'):
-        text = text.replace('<p>', '<p>' + checkbox, 1)
+        text = text.replace('<p>', f'<p>{checkbox}', 1)
     else:
         text = checkbox + text
 
-    return '<li class="task-list-item">' + text + '</li>\n'
+    return f'<li class="task-list-item">{text}' + '</li>\n'
 
 
 def plugin_task_lists(md):
@@ -56,20 +52,15 @@ def _rewrite_all_list_items(tokens):
 
 
 def _rewrite_list_item(item):
-    children = item['children']
-    if children:
-        first_child = children[0]
-        text = first_child.get('text', '')
-        m = TASK_LIST_ITEM.match(text)
-        if m:
-            mark = m.group(1)
-            first_child['text'] = text[m.end():]
+    if not (children := item['children']):
+        return
+    first_child = children[0]
+    text = first_child.get('text', '')
+    if m := TASK_LIST_ITEM.match(text):
+        mark = m.group(1)
+        first_child['text'] = text[m.end():]
 
-            params = item['params']
-            if mark == '[ ]':
-                params = (params[0], False)
-            else:
-                params = (params[0], True)
-
-            item['type'] = 'task_list_item'
-            item['params'] = params
+        params = item['params']
+        params = (params[0], False) if mark == '[ ]' else (params[0], True)
+        item['type'] = 'task_list_item'
+        item['params'] = params

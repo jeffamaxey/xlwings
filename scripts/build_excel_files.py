@@ -94,11 +94,11 @@ if os.getenv("ASPOSE_LICENSE"):
 def set_version_strings(code):
     code = re.sub(
         r'XLWINGS_VERSION As String = ".*"',
-        'XLWINGS_VERSION As String = "{}"'.format(version_string),
+        f'XLWINGS_VERSION As String = "{version_string}"',
         code,
     )
-    code = code.replace("xlwings32-dev.dll", "xlwings32-{}.dll".format(version_string))
-    code = code.replace("xlwings64-dev.dll", "xlwings64-{}.dll".format(version_string))
+    code = code.replace("xlwings32-dev.dll", f"xlwings32-{version_string}.dll")
+    code = code.replace("xlwings64-dev.dll", f"xlwings64-{version_string}.dll")
     return code
 
 
@@ -107,12 +107,11 @@ def produce_single_module(addin_modules, custom_addin=False):
     vba_module_names = ["License", "Main", "Config", "Extensions", "Utils", "Remote"]
     if custom_addin:
         vba_module_names.pop(vba_module_names.index("Extensions"))
-    standalone_code = ""
-    for name in vba_module_names:
-        standalone_code += addin_modules[name].get_Codes()
-
+    standalone_code = "".join(
+        addin_modules[name].get_Codes() for name in vba_module_names
+    )
     standalone_code = set_version_strings(standalone_code)
-    standalone_code = "'Version: {}\n".format(version_string) + standalone_code
+    standalone_code = f"'Version: {version_string}\n{standalone_code}"
     if custom_addin:
         standalone_code = standalone_code.replace(
             'Public Const PROJECT_NAME As String = "xlwings"',

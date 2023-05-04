@@ -118,7 +118,7 @@ class BlockParser(ScannerParser):
         spaces = m.group(1)
         code = m.group(4) or ''
         if spaces and code:
-            _trim_pattern = re.compile('^' + spaces, re.M)
+            _trim_pattern = re.compile(f'^{spaces}', re.M)
             code = _trim_pattern.sub('', code)
         return self.tokenize_block_code(code + '\n', info, state)
 
@@ -206,10 +206,11 @@ class BlockParser(ScannerParser):
 
     def parse_list_item(self, text, depth, state, rules):
         text = self.normalize_list_item_text(text)
-        if not text:
-            children = [{'type': 'block_text', 'text': ''}]
-        else:
-            children = self.parse(text, state, rules)
+        children = (
+            self.parse(text, state, rules)
+            if text
+            else [{'type': 'block_text', 'text': ''}]
+        )
         return {
             'type': 'list_item',
             'params': (depth,),
@@ -258,8 +259,7 @@ class BlockParser(ScannerParser):
 
         tokens = []
         for s in _PARAGRAPH_SPLIT.split(text):
-            s = s.strip()
-            if s:
+            if s := s.strip():
                 tokens.append({'type': 'paragraph', 'text': s})
         return tokens
 
@@ -286,8 +286,7 @@ class BlockParser(ScannerParser):
                 children = tok['raw']
             else:
                 children = inline(tok['text'], state)
-            params = tok.get('params')
-            if params:
+            if params := tok.get('params'):
                 yield method(children, *params)
             else:
                 yield method(children)
@@ -312,23 +311,16 @@ def _create_list_item_pattern(spaces, marker):
     prefix = r'( {0,' + str(len(spaces) + len(marker)) + r'})'
 
     if len(marker) > 1:
-        if marker[-1] == '.':
-            prefix = prefix + r'\d{0,9}\.'
-        else:
-            prefix = prefix + r'\d{0,9}\)'
+        prefix = prefix + r'\d{0,9}\.' if marker[-1] == '.' else prefix + r'\d{0,9}\)'
+    elif marker == '*':
+        prefix = prefix + r'\*'
+    elif marker == '+':
+        prefix = prefix + r'\+'
     else:
-        if marker == '*':
-            prefix = prefix + r'\*'
-        elif marker == '+':
-            prefix = prefix + r'\+'
-        else:
-            prefix = prefix + r'-'
+        prefix = f'{prefix}-'
 
     s1 = ' {' + str(len(marker) + 1) + ',}'
-    if len(marker) > 4:
-        s2 = ' {' + str(len(marker) - 4) + r',}\t'
-    else:
-        s2 = r' *\t'
+    s2 = ' {' + str(len(marker) - 4) + r',}\t' if len(marker) > 4 else r' *\t'
     return re.compile(
         prefix + r'(?:[ \t]*|[ \t]+[^\n]+)\n+'
         r'(?:\1(?:' + s1 + '|' + s2 + ')'

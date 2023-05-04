@@ -153,7 +153,7 @@ def test_can_use_xlwings_without_license_key(clear_user_config, tmp_path):
 def test_can_use_xlwings_with_wrong_license_key(clear_user_config, tmp_path):
     os.makedirs(Path.home() / ".xlwings")
     with open((Path.home() / ".xlwings" / "xlwings.conf"), "w") as config:
-        config.write(f'"LICENSE_KEY","xxx"')
+        config.write('"LICENSE_KEY","xxx"')
     import xlwings
 
     os.chdir(tmp_path)
@@ -202,7 +202,7 @@ def test_standalone(clear_user_config, app, tmp_path):
 @pytest.mark.skipif(xw.__version__ == "dev", reason="requires a built package")
 def test_runpython_embedded_code_standalone(app, clear_user_config, tmp_path):
     os.chdir(tmp_path)
-    subprocess.run(split(f"xlwings quickstart testproject --standalone"))
+    subprocess.run(split("xlwings quickstart testproject --standalone"))
     quickstart_book = app.books.open(tmp_path / "testproject" / "testproject.xlsm")
 
     os.makedirs(Path.home() / ".xlwings")
@@ -211,7 +211,7 @@ def test_runpython_embedded_code_standalone(app, clear_user_config, tmp_path):
 
     os.chdir(tmp_path / "testproject")
     subprocess.run(split("xlwings code embed"))
-    (tmp_path / "testproject" / f"testproject.py").unlink()
+    (tmp_path / "testproject" / "testproject.py").unlink()
     sample_call = quickstart_book.macro("Module1.SampleCall")
     sample_call()
     assert quickstart_book.sheets[0]["A1"].value == "Hello xlwings!"
@@ -222,7 +222,7 @@ def test_runpython_embedded_code_standalone(app, clear_user_config, tmp_path):
 @pytest.mark.skipif(xw.__version__ == "dev", reason="requires a built package")
 def test_udf_embedded_code_standalone(clear_user_config, app, tmp_path):
     os.chdir(tmp_path)
-    subprocess.run(split(f"xlwings quickstart testproject --standalone"))
+    subprocess.run(split("xlwings quickstart testproject --standalone"))
     quickstart_book = app.books.open(tmp_path / "testproject" / "testproject.xlsm")
 
     os.makedirs(Path.home() / ".xlwings")
@@ -231,7 +231,7 @@ def test_udf_embedded_code_standalone(clear_user_config, app, tmp_path):
 
     os.chdir(tmp_path / "testproject")
     subprocess.run(split("xlwings code embed"))
-    (tmp_path / "testproject" / f"testproject.py").unlink()
+    (tmp_path / "testproject" / "testproject.py").unlink()
 
     quickstart_book.macro("ImportPythonUDFs")()
     quickstart_book.sheets[0]["A1"].value = '=hello("test")'
