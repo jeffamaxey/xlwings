@@ -23,13 +23,11 @@ def exit_on_mac():
 
 
 def get_addin_dir():
-    # The call to startup_path creates the XLSTART folder if it doesn't exist yet
     if xw.apps:
         return xw.apps.active.startup_path
-    else:
-        with xw.App(visible=False) as app:
-            startup_path = app.startup_path
-        return startup_path
+    with xw.App(visible=False) as app:
+        startup_path = app.startup_path
+    return startup_path
 
 
 def addin_install(args):
@@ -71,10 +69,7 @@ def addin_install(args):
 
 
 def addin_remove(args):
-    if args.file:
-        addin_name = os.path.basename(args.file)
-    else:
-        addin_name = "xlwings.xlam"
+    addin_name = os.path.basename(args.file) if args.file else "xlwings.xlam"
     addin_path = os.path.join(get_addin_dir(), addin_name)
     try:
         os.remove(addin_path)
@@ -98,17 +93,14 @@ def addin_remove(args):
 
 
 def addin_status(args):
-    if args.file:
-        addin_name = os.path.basename(args.file)
-    else:
-        addin_name = "xlwings.xlam"
+    addin_name = os.path.basename(args.file) if args.file else "xlwings.xlam"
     addin_path = os.path.join(get_addin_dir(), addin_name)
     if os.path.isfile(addin_path):
-        print("The add-in is installed at {}".format(addin_path))
+        print(f"The add-in is installed at {addin_path}")
         print('Use "xlwings addin remove" to uninstall it.')
     else:
         print("The add-in is not installed.")
-        print('"xlwings addin install" will install it at: {}'.format(addin_path))
+        print(f'"xlwings addin install" will install it at: {addin_path}')
 
 
 def quickstart(args):
@@ -132,15 +124,14 @@ def quickstart(args):
             Path(cwd) / project_name,
             ignore=shutil.ignore_patterns("__pycache__"),
         )
-    else:
-        if not os.path.exists(project_path):
-            os.makedirs(project_path)
-        else:
-            sys.exit("Error: Directory already exists.")
+    elif os.path.exists(project_path):
+        sys.exit("Error: Directory already exists.")
 
+    else:
+        os.makedirs(project_path)
     # Python file
     if not args.fastapi:
-        with open(os.path.join(project_path, project_name + ".py"), "w") as f:
+        with open(os.path.join(project_path, f"{project_name}.py"), "w") as f:
             f.write("import xlwings as xw\n\n\n")
             f.write("def main():\n")
             f.write("    wb = xw.Book.caller()\n")
@@ -221,12 +212,12 @@ def license_update(args):
     if os.path.exists(xw.USER_CONFIG_FILE):
         with open(xw.USER_CONFIG_FILE, "r") as f:
             config = f.readlines()
-        for line in config:
-            # Remove existing license key and empty lines
-            if line.split(",")[0] == '"LICENSE_KEY"' or line in ("\r\n", "\n"):
-                pass
-            else:
-                new_config.append(line)
+        new_config.extend(
+            line
+            for line in config
+            if line.split(",")[0] != '"LICENSE_KEY"'
+            and line not in ("\r\n", "\n")
+        )
         new_config.append(license_kv)
     else:
         new_config = [license_kv]
@@ -257,19 +248,17 @@ def get_conda_settings():
 
 
 def config_create(args):
-    if args is None:
-        force = False
-    else:
-        force = args.force
+    force = False if args is None else args.force
     os.makedirs(os.path.dirname(xw.USER_CONFIG_FILE), exist_ok=True)
     settings = []
     conda_path, conda_env = get_conda_settings()
     if conda_path and sys.platform.startswith("win"):
-        settings.append('"CONDA PATH","{}"\n'.format(conda_path))
-        settings.append('"CONDA ENV","{}"\n'.format(conda_env))
+        settings.extend(
+            (f'"CONDA PATH","{conda_path}"\n', f'"CONDA ENV","{conda_env}"\n')
+        )
     else:
         extension = "MAC" if sys.platform.startswith("darwin") else "WIN"
-        settings.append('"INTERPRETER_{}","{}"\n'.format(extension, sys.executable))
+        settings.append(f'"INTERPRETER_{extension}","{sys.executable}"\n')
     if os.path.exists(xw.USER_CONFIG_FILE) and not force:
         print(
             "There is already an existing ~/.xlwings/xlwings.conf file. Run "
@@ -305,7 +294,7 @@ def code_embed(args):
                 line = line.replace("'''", '"""')
                 # Duplicate leading single quotes so Excel interprets them properly
                 # This is required even if the cell is in Text format
-                content.append(["'" + line if line.startswith("'") else line])
+                content.append([f"'{line}" if line.startswith("'") else line])
 
         if source_file.name not in [sheet.name for sheet in wb.sheets]:
             sheet = wb.sheets.add(source_file.name, after=wb.sheets[len(wb.sheets) - 1])
@@ -318,10 +307,10 @@ def code_embed(args):
 
     # Cleanup: remove sheets that don't exist anymore as source files
     if import_dir:
-        source_file_names = set([path.name for path in source_files])
-        source_sheet_names = set(
-            [sheet.name for sheet in wb.sheets if sheet.name.endswith(".py")]
-        )
+        source_file_names = {path.name for path in source_files}
+        source_sheet_names = {
+            sheet.name for sheet in wb.sheets if sheet.name.endswith(".py")
+        }
         for sheet_name in source_sheet_names.difference(source_file_names):
             wb.sheets[sheet_name].delete()
 
@@ -588,18 +577,20 @@ def export_vba_modules(book, overwrite=False):
         )
         path_to_type[str(file_path)] = vb_component.Type
         if (
-            vb_component.Type == 100 and vb_component.CodeModule.CountOfLines > 0
-        ) or vb_component.Type != 100:
-            # Prevents cluttering everything with empty files if you have lots of sheets
-            if overwrite or not file_path.exists():
-                vb_component.Export(str(file_path))
-                if vb_component.Type == 100:
-                    # Remove the meta info so it can be distinguished from regular
-                    # classes when running "xlwings vba import"
-                    with open(file_path, "r") as f:
-                        exported_code = f.readlines()
-                    with open(file_path, "w") as f:
-                        f.writelines(exported_code[9:])
+            (
+                vb_component.Type == 100
+                and vb_component.CodeModule.CountOfLines > 0
+            )
+            or vb_component.Type != 100
+        ) and (overwrite or not file_path.exists()):
+            vb_component.Export(str(file_path))
+            if vb_component.Type == 100:
+                # Remove the meta info so it can be distinguished from regular
+                # classes when running "xlwings vba import"
+                with open(file_path, "r") as f:
+                    exported_code = f.readlines()
+                with open(file_path, "w") as f:
+                    f.writelines(exported_code[9:])
     return path_to_type
 
 
@@ -609,14 +600,13 @@ def vba_get_book(args):
 
     if args and args.file:
         book = xw.Book(args.file)
-    else:
-        if not xw.apps:
-            sys.exit(
-                "Your workbook must be open or you have to supply the --file argument."
-            )
-        else:
-            book = xw.books.active
+    elif xw.apps:
+        book = xw.books.active
 
+    else:
+        sys.exit(
+            "Your workbook must be open or you have to supply the --file argument."
+        )
     tf = query_yes_no(
         textwrap.dedent(
             f"""
@@ -692,7 +682,9 @@ def vba_edit(args):
     path_to_type = export_vba_modules(book, overwrite=False)
     mode = "verbose" if args.verbose else "silent"
 
-    print(f"NOTE: Deleting a VBA module here will also delete it in the VBA editor!")
+    print(
+        "NOTE: Deleting a VBA module here will also delete it in the VBA editor!"
+    )
     print(f"Watching for changes in {book.name} ({mode} mode)...(Hit Ctrl-C to stop)")
 
     for changes in watch(

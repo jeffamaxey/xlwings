@@ -112,20 +112,14 @@ else:
         def inner(f):
             return f
 
-        if f is None:
-            return inner
-        else:
-            return inner(f)
+        return inner if f is None else inner(f)
 
     def sub(f=None, *args, **kwargs):
         @wraps(f)
         def inner(f):
             return f
 
-        if f is None:
-            return inner
-        else:
-            return inner(f)
+        return inner if f is None else inner(f)
 
     def ret(*args, **kwargs):
         def inner(f):

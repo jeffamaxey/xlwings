@@ -186,7 +186,7 @@ class TestBook(TestBase):
                 os.chdir(folder)
 
         cwd = os.getcwd()
-        target_file_path = os.path.join(cwd, self.wb1.name + ".xlsx")
+        target_file_path = os.path.join(cwd, f"{self.wb1.name}.xlsx")
         if os.path.isfile(target_file_path):
             os.remove(target_file_path)
 

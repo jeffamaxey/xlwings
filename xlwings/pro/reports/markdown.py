@@ -20,16 +20,14 @@ from ...conversion import Converter
 
 class Style:
     def __init__(self, display_name=None):
-        if display_name:
-            self.display_name = display_name
-        else:
-            self.display_name = ""
+        self.display_name = display_name if display_name else ""
 
     def __repr__(self):
-        s = ""
-        for attribute in vars(self):
-            if getattr(self, attribute) and attribute != "display_name":
-                s += f"{self.display_name}.{attribute}: {getattr(self, attribute)}\n"
+        s = "".join(
+            f"{self.display_name}.{attribute}: {getattr(self, attribute)}\n"
+            for attribute in vars(self)
+            if getattr(self, attribute) and attribute != "display_name"
+        )
         return s.replace("\n\n", "\n")
 
 

@@ -63,17 +63,15 @@ def parse_single_placeholder(value, env):
     Returns var, filter_list with filter_name:filter_args (list of dicts)
     """
     ast = env.parse(value)
-    found_nodes = list(ast.find_all(node_type=nodes.Filter))
-    if found_nodes:
-        node = found_nodes[0]
-        f = node
-        filter_list = [{f.name: f.args}]
-        while isinstance(f.node, nodes.Filter):
-            f = f.node
-            filter_list.insert(0, {f.name: f.args})
-        return f.node.name, filter_list
-    else:
+    if not (found_nodes := list(ast.find_all(node_type=nodes.Filter))):
         return value.replace("{{", "").replace("}}", "").strip(), []
+    node = found_nodes[0]
+    f = node
+    filter_list = [{f.name: f.args}]
+    while isinstance(f.node, nodes.Filter):
+        f = f.node
+        filter_list.insert(0, {f.name: f.args})
+    return f.node.name, filter_list
 
 
 def render_sheet(sheet, **data):
@@ -113,19 +111,16 @@ def render_sheet(sheet, **data):
     uses_frames = False
     frame_indices = []
     for ix, cell in enumerate(sheet.range((1, 1), (1, last_cell.column))):
-        if cell.note:
-            if cell.note.text.strip() == "<frame>":
-                frame_indices.append(ix)
-                uses_frames = True
-    is_single_frame = True if len(frame_indices) == 1 else False
+        if cell.note and cell.note.text.strip() == "<frame>":
+            frame_indices.append(ix)
+            uses_frames = True
+    is_single_frame = len(frame_indices) == 1
     frame_indices += [0, last_cell.column]
     frame_indices = list(sorted(set(frame_indices)))
-    values_per_frame = []
-    for ix in range(len(frame_indices) - 1):
-        values_per_frame.append(
-            [i[frame_indices[ix] : frame_indices[ix + 1]] for i in values_all]
-        )
-
+    values_per_frame = [
+        [i[frame_indices[ix] : frame_indices[ix + 1]] for i in values_all]
+        for ix in range(len(frame_indices) - 1)
+    ]
     # Loop through every cell for each frame
     for ix, values in enumerate(values_per_frame):
         row_shift = 0
@@ -174,7 +169,7 @@ def render_sheet(sheet, **data):
                             )
                             cell.value = None
                         elif isinstance(result, (str, numbers.Number)):
-                            if any(["fontcolor" in f for f in filter_list]):
+                            if any("fontcolor" in f for f in filter_list):
                                 cell.font.color = filters.fontcolor(
                                     filter_list=filter_list
                                 )
@@ -212,16 +207,17 @@ def render_sheet(sheet, **data):
                                 # as df.reset_index() is preferred
                                 options = {
                                     "index": any(
-                                        ["showindex" in f for f in filter_list]
+                                        "showindex" in f for f in filter_list
                                     ),
-                                    "header": not any(
-                                        ["noheader" in f for f in filter_list]
+                                    "header": all(
+                                        "noheader" not in f
+                                        for f in filter_list
                                     ),
                                 }
 
                                 # Assumes 1 header row,
                                 # MultiIndex headers aren't supported
-                                if any(["header" in f for f in filter_list]):
+                                if any("header" in f for f in filter_list):
                                     # Hack for the 'header' filter
                                     result_len = 1
                                 else:
@@ -296,11 +292,6 @@ def render_sheet(sheet, **data):
                         # standard text rendering here
                         template = env.from_string(value)
                         cell.value = template.render(data)
-                    else:
-                        # Don't do anything with cells that don't contain any templating
-                        # so we don't lose the formatting
-                        pass
-
     # Loop through all shapes of interest with a template text
     for shape in [
         shape for shape in sheet.shapes if shape.type in ("auto_shape", "text_box")
@@ -323,7 +314,7 @@ def render_sheet(sheet, **data):
                     )
                 else:
                     # Single Jinja var but no Markdown
-                    if any(["fontcolor" in f for f in filter_list]):
+                    if any("fontcolor" in f for f in filter_list):
                         shape.font.color = filters.fontcolor(filter_list=filter_list)
                     template = env.from_string(shapetext)
                     shape.text = template.render(data)
@@ -416,16 +407,15 @@ def render_template(template, output, book_settings=None, app=None, **data):
     """
     shutil.copyfile(template, output)
     if app:
-        if book_settings:
-            wb = app.books.open(output, **book_settings)
-        else:
-            wb = app.books.open(output)
+        wb = (
+            app.books.open(output, **book_settings)
+            if book_settings
+            else app.books.open(output)
+        )
+    elif book_settings:
+        wb = Book(output, **book_settings)
     else:
-        # Use existing Excel instance or create a new one if there is none
-        if book_settings:
-            wb = Book(output, **book_settings)
-        else:
-            wb = Book(output)
+        wb = Book(output)
 
     for sheet in reversed(wb.sheets):
         render_sheet(sheet, **data)

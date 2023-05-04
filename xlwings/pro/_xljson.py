@@ -216,26 +216,28 @@ class Books(base_classes.Books):
         return book
 
     def _try_find_book_by_name(self, name):
-        for book in self.books:
-            if book.name == name or book.fullname == name:
-                return book
-        return None
+        return next(
+            (
+                book
+                for book in self.books
+                if book.name == name or book.fullname == name
+            ),
+            None,
+        )
 
     def __len__(self):
         return len(self.books)
 
     def __iter__(self):
-        for book in self.books:
-            yield book
+        yield from self.books
 
     def __call__(self, name_or_index):
         if isinstance(name_or_index, numbers.Number):
             return self.books[name_or_index - 1]
-        else:
-            book = self._try_find_book_by_name(name_or_index)
-            if book is None:
-                raise KeyError(name_or_index)
-            return book
+        book = self._try_find_book_by_name(name_or_index)
+        if book is None:
+            raise KeyError(name_or_index)
+        return book
 
 
 class Book(base_classes.Book):
@@ -254,7 +256,7 @@ class Book(base_classes.Book):
         self._json["actions"].append(
             {
                 "func": kwargs.get("func"),
-                "args": [args] if not isinstance(args, list) else args,
+                "args": args if isinstance(args, list) else [args],
                 "values": kwargs.get("values"),
                 "sheet_position": kwargs.get("sheet_position"),
                 "start_row": kwargs.get("start_row"),
@@ -318,11 +320,10 @@ class Sheets(base_classes.Sheets):
         else:
             api = None
             for ix, sheet in enumerate(self.api):
-                if sheet["name"] == name_or_index:
-                    api = sheet
-                    break
-                else:
+                if sheet["name"] != name_or_index:
                     continue
+                api = sheet
+                break
         if api is None:
             raise ValueError(f"Sheet '{name_or_index}' doesn't exist!")
         else:
@@ -338,10 +339,7 @@ class Sheets(base_classes.Sheets):
                 break
         api = {"name": f"Sheet{sheet_number}", "values": [[]]}
         if before:
-            if before.index == 1:
-                ix = 1
-            else:
-                ix = before.index - 1
+            ix = 1 if before.index == 1 else before.index - 1
         elif after:
             ix = after.index + 1
         else:
@@ -427,32 +425,30 @@ def get_range_api(api_values, arg1, arg2=None):
     # Keeping this outside of the Range class allows us to cache it across multiple
     # instances of the same range
     if arg2:
-        values = [
-            row[arg1[1] - 1 : arg2[1]] for row in api_values[arg1[0] - 1 : arg2[0]]
-        ]
-        if not values:
+        if not (
+            values := [
+                row[arg1[1] - 1 : arg2[1]]
+                for row in api_values[arg1[0] - 1 : arg2[0]]
+            ]
+        ):
             # Completely outside the used range
             return [(None,) * (arg2[1] + 1 - arg1[1])] * (arg2[0] + 1 - arg1[0])
-        else:
-            # Partly outside the used range
-            nrows = arg2[0] + 1 - arg1[0]
-            ncols = arg2[1] + 1 - arg1[1]
-            nrows_actual = len(values)
-            ncols_actual = len(values[0])
-            delta_rows = nrows - nrows_actual
-            delta_cols = ncols - ncols_actual
-            if delta_rows != 0:
-                values.extend([(None,) * ncols_actual] * delta_rows)
-            if delta_cols != 0:
-                v = []
-                for row in values:
-                    v.append(row + (None,) * delta_cols)
-                values = v
-            return values
+        # Partly outside the used range
+        nrows = arg2[0] + 1 - arg1[0]
+        ncols = arg2[1] + 1 - arg1[1]
+        nrows_actual = len(values)
+        ncols_actual = len(values[0])
+        delta_rows = nrows - nrows_actual
+        delta_cols = ncols - ncols_actual
+        if delta_rows != 0:
+            values.extend([(None,) * ncols_actual] * delta_rows)
+        if delta_cols != 0:
+            v = [row + (None,) * delta_cols for row in values]
+            values = v
+        return values
     else:
         try:
-            values = [(api_values[arg1[0] - 1][arg1[1] - 1],)]
-            return values
+            return [(api_values[arg1[0] - 1][arg1[1] - 1],)]
         except IndexError:
             # Outside the used range
             return [(None,)]
@@ -480,10 +476,10 @@ class Range(base_classes.Range):
                         and api_name["sheet_index"] == sheet.index - 1
                     ):
                         tuple1, tuple2 = utils.a1_to_tuples(api_name["address"])
-                if not tuple1:
-                    raise NoSuchObjectError(
-                        f"The address/named range '{arg1}' doesn't exist."
-                    )
+            if not tuple1:
+                raise NoSuchObjectError(
+                    f"The address/named range '{arg1}' doesn't exist."
+                )
             arg1, arg2 = tuple1, tuple2
 
         # Coordinates
@@ -624,9 +620,9 @@ class Range(base_classes.Range):
             return self.sheet.range((self.row, self.column + ncols))
 
     def autofit(self, axis=None):
-        if axis == "rows" or axis == "r":
+        if axis in ["rows", "r"]:
             self.append_json_action(func="setAutofit", args="rows")
-        elif axis == "columns" or axis == "c":
+        elif axis in ["columns", "c"]:
             self.append_json_action(func="setAutofit", args="columns")
         elif axis is None:
             self.append_json_action(func="setAutofit", args="rows")
@@ -660,15 +656,14 @@ class Range(base_classes.Range):
         return nrows * ncols
 
     def __call__(self, arg1, arg2=None):
-        if arg2 is None:
-            col = (arg1 - 1) % self.shape[1]
-            row = int((arg1 - 1 - col) / self.shape[1])
-            return self(row + 1, col + 1)
-        else:
+        if arg2 is not None:
             return Range(
                 sheet=self.sheet,
                 arg1=(self.row + arg1 - 1, self.column + arg2 - 1),
             )
+        col = (arg1 - 1) % self.shape[1]
+        row = int((arg1 - 1 - col) / self.shape[1])
+        return self(row + 1, col + 1)
 
 
 class Collection(base_classes.Collection):
@@ -707,10 +702,7 @@ class Collection(base_classes.Collection):
         if isinstance(key, numbers.Number):
             return 1 <= key <= len(self)
         else:
-            for i in self.api:
-                if i["name"] == key:
-                    return True
-            return False
+            return any(i["name"] == key for i in self.api)
 
 
 class Picture(base_classes.Picture):
@@ -764,14 +756,12 @@ class Picture(base_classes.Picture):
 
     @property
     def index(self):
-        # TODO: make available in public API
         if isinstance(self.key, numbers.Number):
             return self.key
-        else:
-            for ix, obj in self.api:
-                if obj["name"] == self.key:
-                    return ix + 1
-            raise KeyError(self.key)
+        for ix, obj in self.api:
+            if obj["name"] == self.key:
+                return ix + 1
+        raise KeyError(self.key)
 
     def delete(self):
         self.parent._api["pictures"].pop(self.index - 1)

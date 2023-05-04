@@ -13,7 +13,7 @@ import xlwings as xw
 def threading(n, m):
     print("1 - CALLED THREADING FUNCTION")
     time.sleep(1)
-    return [["%s x %s : %s, %s" % (n, m, i, j) for j in range(m)] for i in range(n)]
+    return [[f"{n} x {m} : {i}, {j}" for j in range(m)] for i in range(n)]
 
 
 @xw.arg("n", numbers=int)
@@ -21,7 +21,7 @@ def threading(n, m):
 @xw.ret(expand="table")
 def nothreading(n, m):
     print("2 - CALLED NOTHREADING FUNCTION")
-    return [["%s x %s : %s, %s" % (n, m, i, j) for j in range(m)] for i in range(n)]
+    return [[f"{n} x {m} : {i}, {j}" for j in range(m)] for i in range(n)]
 
 
 @xw.arg("n", numbers=int)
@@ -29,7 +29,7 @@ def nothreading(n, m):
 @xw.ret(expand="table")
 async def coro(n, m):
     print("3 - CALLED COROUTINE")
-    return [["%s x %s : %s, %s" % (n, m, i, j) for j in range(m)] for i in range(n)]
+    return [[f"{n} x {m} : {i}, {j}" for j in range(m)] for i in range(n)]
 
 
 @xw.func

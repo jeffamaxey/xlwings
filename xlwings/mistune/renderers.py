@@ -14,10 +14,10 @@ class BaseRenderer(object):
         try:
             return object.__getattribute__(self, name)
         except AttributeError:
-            method = self._methods.get(name)
-            if not method:
+            if method := self._methods.get(name):
+                return method
+            else:
                 raise AttributeError('No renderer "{!r}"'.format(name))
-            return method
 
     def finalize(self, data):
         raise NotImplementedError(
@@ -130,50 +130,46 @@ class HTMLRenderer(BaseRenderer):
         return url
 
     def text(self, text):
-        if self._escape:
-            return escape(text)
-        return escape_html(text)
+        return escape(text) if self._escape else escape_html(text)
 
     def link(self, link, text=None, title=None):
         if text is None:
             text = link
 
-        s = '<a href="' + self._safe_url(link) + '"'
+        s = f'<a href="{self._safe_url(link)}"'
         if title:
-            s += ' title="' + escape_html(title) + '"'
-        return s + '>' + (text or link) + '</a>'
+            s += f' title="{escape_html(title)}"'
+        return f'{s}>' + (text or link) + '</a>'
 
     def image(self, src, alt="", title=None):
         src = self._safe_url(src)
         alt = escape_html(alt)
-        s = '<img src="' + src + '" alt="' + alt + '"'
+        s = f'<img src="{src}" alt="{alt}"'
         if title:
-            s += ' title="' + escape_html(title) + '"'
-        return s + ' />'
+            s += f' title="{escape_html(title)}"'
+        return f'{s} />'
 
     def emphasis(self, text):
-        return '<em>' + text + '</em>'
+        return f'<em>{text}</em>'
 
     def strong(self, text):
-        return '<strong>' + text + '</strong>'
+        return f'<strong>{text}</strong>'
 
     def codespan(self, text):
-        return '<code>' + escape(text) + '</code>'
+        return f'<code>{escape(text)}</code>'
 
     def linebreak(self):
         return '<br />\n'
 
     def inline_html(self, html):
-        if self._escape:
-            return escape(html)
-        return html
+        return escape(html) if self._escape else html
 
     def paragraph(self, text):
-        return '<p>' + text + '</p>\n'
+        return f'<p>{text}' + '</p>\n'
 
     def heading(self, text, level):
-        tag = 'h' + str(level)
-        return '<' + tag + '>' + text + '</' + tag + '>\n'
+        tag = f'h{str(level)}'
+        return f'<{tag}>{text}</{tag}' + '>\n'
 
     def newline(self):
         return ''
@@ -191,30 +187,28 @@ class HTMLRenderer(BaseRenderer):
         if info:
             lang = info.split(None, 1)[0]
             lang = escape_html(lang)
-            html += ' class="language-' + lang + '"'
-        return html + '>' + escape(code) + '</code></pre>\n'
+            html += f' class="language-{lang}"'
+        return f'{html}>{escape(code)}' + '</code></pre>\n'
 
     def block_quote(self, text):
         return '<blockquote>\n' + text + '</blockquote>\n'
 
     def block_html(self, html):
-        if not self._escape:
-            return html + '\n'
-        return '<p>' + escape(html) + '</p>\n'
+        return f'<p>{escape(html)}' + '</p>\n' if self._escape else html + '\n'
 
     def block_error(self, html):
-        return '<div class="error">' + html + '</div>\n'
+        return f'<div class="error">{html}' + '</div>\n'
 
     def list(self, text, ordered, level, start=None):
         if ordered:
             html = '<ol'
             if start is not None:
-                html += ' start="' + str(start) + '"'
+                html += f' start="{str(start)}"'
             return html + '>\n' + text + '</ol>\n'
         return '<ul>\n' + text + '</ul>\n'
 
     def list_item(self, text, level):
-        return '<li>' + text + '</li>\n'
+        return f'<li>{text}' + '</li>\n'
 
     def finalize(self, data):
         return ''.join(data)

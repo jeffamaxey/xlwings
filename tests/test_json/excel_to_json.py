@@ -1,5 +1,6 @@
 """Generates the JSON structure as returned by Excel online"""
 
+
 import json
 
 import xlwings as xw
@@ -29,4 +30,4 @@ for sheet in book.sheets:
         }
     )
 
-print(json.loads(json.dumps(data, default=lambda d: d.isoformat() + ".000Z")))
+print(json.loads(json.dumps(data, default=lambda d: f"{d.isoformat()}.000Z")))

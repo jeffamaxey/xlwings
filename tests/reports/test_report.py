@@ -337,8 +337,6 @@ class TestFrames(unittest.TestCase):
                     .get(kw.line_style),
                     kw.continuous,
                 )
-        else:
-            pass
             # TODO
 
 

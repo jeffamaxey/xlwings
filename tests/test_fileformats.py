@@ -19,8 +19,8 @@ def app():
 
 def test_save_new_book_defaults(app):
     book = app.books.add()
-    if Path(book.name + ".xlsx").is_file():
-        Path(book.name + ".xlsx").unlink()
+    if Path(f"{book.name}.xlsx").is_file():
+        Path(f"{book.name}.xlsx").unlink()
     book.save()
 
     assert Path(book.name).is_file()

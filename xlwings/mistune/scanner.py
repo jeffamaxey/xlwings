@@ -7,15 +7,13 @@ class Scanner(re.Scanner):
         pos = 0
         for match in iter(sc.search, None):
             name, method = self.lexicon[match.lastindex - 1][1]
-            hole = string[pos:match.start()]
-            if hole:
+            if hole := string[pos : match.start()]:
                 yield parse_text(hole, state)
 
             yield method(match, state)
             pos = match.end()
 
-        hole = string[pos:]
-        if hole:
+        if hole := string[pos:]:
             yield parse_text(hole, state)
 
 
@@ -39,7 +37,7 @@ class ScannerParser(object):
     def get_rule_method(self, name):
         if name not in self.RULE_NAMES:
             return self.rule_methods[name][1]
-        return getattr(self, 'parse_' + name)
+        return getattr(self, f'parse_{name}')
 
     def parse_text(self, text, state):
         raise NotImplementedError
@@ -48,8 +46,7 @@ class ScannerParser(object):
         sc = self._create_scanner(rules)
         for tok in sc.iter(s, state, self.parse_text):
             if isinstance(tok, list):
-                for t in tok:
-                    yield t
+                yield from tok
             elif tok:
                 yield tok
 
@@ -82,12 +79,10 @@ class Matcher(object):
         self.lexicon = lexicon
 
     def search_pos(self, string, pos):
-        m = self.PARAGRAPH_END.search(string, pos)
-        if not m:
+        if m := self.PARAGRAPH_END.search(string, pos):
+            return m.end() if set(m.group(0)) == {'\n'} else m.start() + 1
+        else:
             return None
-        if set(m.group(0)) == {'\n'}:
-            return m.end()
-        return m.start() + 1
 
     def iter(self, string, state, parse_text):
         pos = 0

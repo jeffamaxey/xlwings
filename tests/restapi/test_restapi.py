@@ -6,12 +6,12 @@ import json
 class TestRestApi(TestCase):
     def get_book_urls(self, endpoint):
         return [
-            f"/apps/{self.app1.pid}/books/{self.wb1.name}" + endpoint,
-            f"/apps/{self.app1.pid}/books/0" + endpoint,
-            f"/books/{self.wb1.name}" + endpoint,
-            f"/books/0" + endpoint,
-            f"/book/{self.wb1.name}" + endpoint,
-            f"/book/{self.wb1.fullname}" + endpoint,
+            f"/apps/{self.app1.pid}/books/{self.wb1.name}{endpoint}",
+            f"/apps/{self.app1.pid}/books/0{endpoint}",
+            f"/books/{self.wb1.name}{endpoint}",
+            f"/books/0{endpoint}",
+            f"/book/{self.wb1.name}{endpoint}",
+            f"/book/{self.wb1.fullname}{endpoint}",
         ]
 
     def test_get_apps(self):

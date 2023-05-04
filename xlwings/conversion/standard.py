@@ -35,10 +35,8 @@ class ExpandRangeStage:
         self.expand = options.get("expand", None)
 
     def __call__(self, c):
-        if c.range:
-            # auto-expand the range
-            if self.expand:
-                c.range = c.range.expand(self.expand)
+        if c.range and self.expand:
+            c.range = c.range.expand(self.expand)
 
 
 class WriteValueToRangeStage:
@@ -54,8 +52,7 @@ class WriteValueToRangeStage:
             else:
                 rng = rng.resize(len(value), len(value[0]))
 
-            chunksize = self.options.get("chunksize")
-            if chunksize:
+            if chunksize := self.options.get("chunksize"):
                 for ix, value_chunk in enumerate(chunk(value, chunksize)):
                     rng[
                         ix * chunksize : ix * chunksize + chunksize, :
@@ -144,17 +141,15 @@ class AdjustDimensionsStage:
             else:
                 raise Exception("Range must be 1-by-n or n-by-1 when ndim=1.")
 
-        # ndim = 2 is a no-op
         elif self.ndim != 2:
-            raise ValueError("Invalid c.value ndim=%s" % self.ndim)
+            raise ValueError(f"Invalid c.value ndim={self.ndim}")
 
 
 class Ensure2DStage:
     def __call__(self, c):
         if isinstance(c.value, (list, tuple)):
-            if len(c.value) > 0:
-                if not isinstance(c.value[0], (list, tuple)):
-                    c.value = [c.value]
+            if len(c.value) > 0 and not isinstance(c.value[0], (list, tuple)):
+                c.value = [c.value]
         else:
             c.meta["scalar"] = True
             c.value = [[c.value]]

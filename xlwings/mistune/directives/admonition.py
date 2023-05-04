@@ -8,8 +8,7 @@ class Admonition(Directive):
     }
 
     def parse(self, block, m, state):
-        options = self.parse_options(m)
-        if options:
+        if options := self.parse_options(m):
             return {
                 'type': 'block_error',
                 'raw': 'Admonition has no options'
@@ -38,11 +37,11 @@ class Admonition(Directive):
 
 
 def render_html_admonition(text, name, title=""):
-    html = '<section class="admonition ' + name + '">\n'
+    html = f'<section class="admonition {name}' + '">\n'
     if not title:
         title = name.capitalize()
     if title:
-        html += '<p class="admonition-title">' + title + '</p>\n'
+        html += f'<p class="admonition-title">{title}' + '</p>\n'
     if text:
         html += text
     return html + '</section>\n'

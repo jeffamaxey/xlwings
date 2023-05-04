@@ -155,7 +155,7 @@ class TestPicture(TestBase):
         pic = self.wb1.sheets[0].pictures.add(filename, name="pic1")
         self.assertEqual(int(pic.height), 30)
         pic.height = 50
-        self.assertEqual(int(pic.height), 50)
+        self.assertEqual(pic.height, 50)
 
     def test_delete(self):
         filename = os.path.join(this_dir, "sample_picture.png")
