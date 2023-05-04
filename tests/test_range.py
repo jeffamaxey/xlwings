@@ -313,18 +313,18 @@ class TestRangeAttributes(TestBase):
         self.assertEqual(40, self.wb1.sheets[0].range("A1:D4").row_height)
         self.assertEqual(40, self.wb1.sheets[0].range("A1:D4").column_width)
         self.wb1.sheets[0].range("A1:D4").autofit()
-        self.assertTrue(40 != self.wb1.sheets[0].range("A1:D4").column_width)
-        self.assertTrue(40 != self.wb1.sheets[0].range("A1:D4").row_height)
+        self.assertTrue(self.wb1.sheets[0].range("A1:D4").column_width != 40)
+        self.assertTrue(self.wb1.sheets[0].range("A1:D4").row_height != 40)
 
         self.wb1.sheets[0].range("A1:D4").row_height = 40
         self.assertEqual(40, self.wb1.sheets[0].range("A1:D4").row_height)
         self.wb1.sheets[0].range("A1:D4").rows.autofit()
-        self.assertTrue(40 != self.wb1.sheets[0].range("A1:D4").row_height)
+        self.assertTrue(self.wb1.sheets[0].range("A1:D4").row_height != 40)
 
         self.wb1.sheets[0].range("A1:D4").column_width = 40
         self.assertEqual(40, self.wb1.sheets[0].range("A1:D4").column_width)
         self.wb1.sheets[0].range("A1:D4").columns.autofit()
-        self.assertTrue(40 != self.wb1.sheets[0].range("A1:D4").column_width)
+        self.assertTrue(self.wb1.sheets[0].range("A1:D4").column_width != 40)
 
         self.wb1.sheets[0].range("A1:D4").rows.autofit()
         self.wb1.sheets[0].range("A1:D4").columns.autofit()
@@ -334,7 +334,7 @@ class TestRangeAttributes(TestBase):
         self.wb1.sheets[0].range("A:D").column_width = 40
         self.assertEqual(40, self.wb1.sheets[0].range("A:D").column_width)
         self.wb1.sheets[0].range("A:D").autofit()
-        self.assertTrue(40 != self.wb1.sheets[0].range("A:D").column_width)
+        self.assertTrue(self.wb1.sheets[0].range("A:D").column_width != 40)
 
         # Just checking if they don't throw an error
         self.wb1.sheets[0].range("A:D").rows.autofit()
@@ -345,7 +345,7 @@ class TestRangeAttributes(TestBase):
         self.wb1.sheets[0].range("1:10").row_height = 40
         self.assertEqual(40, self.wb1.sheets[0].range("1:10").row_height)
         self.wb1.sheets[0].range("1:10").autofit()
-        self.assertTrue(40 != self.wb1.sheets[0].range("1:10").row_height)
+        self.assertTrue(self.wb1.sheets[0].range("1:10").row_height != 40)
 
         # Just checking if they don't throw an error
         self.wb1.sheets[0].range("1:1000000").rows.autofit()
@@ -448,7 +448,7 @@ class TestRangeAttributes(TestBase):
         hyperlink = self.wb1.sheets[0].range("A1").hyperlink
         if not hyperlink.endswith("/"):
             hyperlink += "/"
-        self.assertEqual(hyperlink, "http://" + address + "/")
+        self.assertEqual(hyperlink, f"http://{address}/")
 
         # Address + FriendlyName
         self.wb1.sheets[0].range("A2").add_hyperlink(address, "test_link")
@@ -456,7 +456,7 @@ class TestRangeAttributes(TestBase):
         hyperlink = self.wb1.sheets[0].range("A2").hyperlink
         if not hyperlink.endswith("/"):
             hyperlink += "/"
-        self.assertEqual(hyperlink, "http://" + address + "/")
+        self.assertEqual(hyperlink, f"http://{address}/")
 
     def test_hyperlink_formula(self):
         self.wb1.sheets[0].range(

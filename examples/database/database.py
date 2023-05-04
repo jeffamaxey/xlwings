@@ -50,11 +50,7 @@ def playlist():
     # Clear the sheet and write the column names and result to Excel
     sht.range("A9").expand().clear_contents()
     sht.range("A9").value = col_names
-    if len(rows):
-        sht.range("A10").value = rows
-    else:
-        sht.range("A10").value = "Empty Playlist!"
-
+    sht.range("A10").value = rows if len(rows) else "Empty Playlist!"
     # Close cursor and connection
     cursor.close()
     con.close()
@@ -88,8 +84,10 @@ def combobox():
     # Format and fill the ComboBox to show Names (Text) and give back IDs (Values)
     # TODO: implement natively in xlwings
     combo = "ComboBox1"
-    wb.api.ActiveSheet.OLEObjects(combo).Object.ListFillRange = "Source!{}".format(
-        str(source.range("A1").expand().address)
+    wb.api.ActiveSheet.OLEObjects(
+        combo
+    ).Object.ListFillRange = (
+        f'Source!{str(source.range("A1").expand().address)}'
     )
     wb.api.ActiveSheet.OLEObjects(combo).Object.BoundColumn = 1
     wb.api.ActiveSheet.OLEObjects(combo).Object.ColumnCount = 2

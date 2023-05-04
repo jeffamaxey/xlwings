@@ -95,8 +95,8 @@ def render_ast_footnote_item(children, key, index):
 
 def render_html_footnote_ref(key, index):
     i = str(index)
-    html = '<sup class="footnote-ref" id="fnref-' + i + '">'
-    return html + '<a href="#fn-' + i + '">' + i + '</a></sup>'
+    html = f'<sup class="footnote-ref" id="fnref-{i}">'
+    return f'{html}<a href="#fn-{i}">{i}</a></sup>'
 
 
 def render_html_footnotes(text):
@@ -109,14 +109,11 @@ def render_html_footnotes(text):
 
 def render_html_footnote_item(text, key, index):
     i = str(index)
-    back = '<a href="#fnref-' + i + '" class="footnote">&#8617;</a>'
+    back = f'<a href="#fnref-{i}" class="footnote">&#8617;</a>'
 
     text = text.rstrip()
-    if text.endswith('</p>'):
-        text = text[:-4] + back + '</p>'
-    else:
-        text = text + back
-    return '<li id="fn-' + i + '">' + text + '</li>\n'
+    text = text[:-4] + back + '</p>' if text.endswith('</p>') else text + back
+    return f'<li id="fn-{i}">{text}' + '</li>\n'
 
 
 def plugin_footnotes(md):

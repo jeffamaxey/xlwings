@@ -27,8 +27,7 @@ def parse_inline_abbr(inline, m, state):
 
 
 def after_parse_def_abbr(md, tokens, state):
-    def_abbrs = state.get('def_abbrs')
-    if def_abbrs:
+    if def_abbrs := state.get('def_abbrs'):
         labels = list(def_abbrs.keys())
         abbr_pattern = r'|'.join(re.escape(k) for k in labels)
         md.inline.register_rule('abbr', abbr_pattern, parse_inline_abbr)
@@ -40,7 +39,7 @@ def render_html_abbr(key, definition):
     title_attribute = ""
     if definition:
         definition = escape_html(definition)
-        title_attribute = ' title="{}"'.format(definition)
+        title_attribute = f' title="{definition}"'
 
     return "<abbr{title_attribute}>{key}</abbr>".format(
         key=key,

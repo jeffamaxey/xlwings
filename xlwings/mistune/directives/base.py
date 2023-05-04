@@ -80,15 +80,10 @@ class PluginDirective(object):
 
     def parse_block_directive(self, block, m, state):
         name = m.group('name')
-        method = self._directives.get(name)
-        if method:
+        if method := self._directives.get(name):
             return method(block, m, state)
 
-        token = {
-            'type': 'block_error',
-            'raw': 'Unsupported directive: ' + name,
-        }
-        return token
+        return {'type': 'block_error', 'raw': f'Unsupported directive: {name}'}
 
     def __call__(self, md):
         md._directive = self

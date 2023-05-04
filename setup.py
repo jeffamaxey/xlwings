@@ -10,7 +10,7 @@ with open(os.path.join(os.path.dirname(__file__), "README.rst")) as f:
 
 # Version Number
 with open(os.path.join(os.path.dirname(__file__), "xlwings", "__init__.py")) as f:
-    version = re.compile(r'.*__version__ = "(.*?)"', re.S).match(f.read()).group(1)
+    version = re.compile(r'.*__version__ = "(.*?)"', re.S).match(f.read())[1]
 
 # Dependencies
 data_files = []
@@ -43,9 +43,6 @@ elif sys.platform.startswith("darwin"):
             [f"xlwings/xlwings-{version}.applescript"],
         )
     ]
-else:
-    pass
-
 extras_require = {
     "reports": ["Jinja2", "pdfrw"],
     "all": [

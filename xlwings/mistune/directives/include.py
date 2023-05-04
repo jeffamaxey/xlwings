@@ -18,16 +18,10 @@ class DirectiveInclude(Directive):
         dest = os.path.join(os.path.dirname(source_file), relpath)
         dest = os.path.normpath(dest)
         if dest == source_file:
-            return {
-                'type': 'block_error',
-                'raw': 'Could not include self: ' + relpath,
-            }
+            return {'type': 'block_error', 'raw': f'Could not include self: {relpath}'}
 
         if not os.path.isfile(dest):
-            return {
-                'type': 'block_error',
-                'raw': 'Could not find file: ' + relpath,
-            }
+            return {'type': 'block_error', 'raw': f'Could not find file: {relpath}'}
 
         with open(dest, 'rb') as f:
             content = f.read()

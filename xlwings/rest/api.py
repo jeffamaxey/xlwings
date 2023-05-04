@@ -56,7 +56,7 @@ def get_book_object(fullname=None, name_or_ix=None, app_ix=None):
             return app.books[name_or_ix]
         except KeyError as e:
             logger.exception(str(e))
-            abort(500, "Couldn't find Book: " + str(e))
+            abort(500, f"Couldn't find Book: {str(e)}")
         except Exception as e:
             logger.exception(str(e))
             abort(500, str(e))
@@ -143,7 +143,7 @@ def get_range_address(
 ):
     book = get_book_object(fullname_or_name, book_name_or_ix, pid)
     sheet = get_sheet_object(book, sheet_name_or_ix)
-    options = {k: v for k, v in request.args.items()}
+    options = dict(request.args.items())
     return jsonify(serialize_range(sheet.range(address).options(**options)))
 
 

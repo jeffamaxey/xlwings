@@ -8,10 +8,10 @@ if not os.path.exists(os.path.join(this_dir, "_build")):
 for this_dir, dirs, files in os.walk(this_dir):
     for d in dirs:
         if d not in ["build", "_build", "__pycache__"]:
-            with ZipFile(os.path.join("_build", d + ".zip"), "w") as zf:
+            with ZipFile(os.path.join("_build", f"{d}.zip"), "w") as zf:
                 zf.write(os.path.join(this_dir, d, "LICENSE.txt"), "LICENSE.txt")
-                zf.write(os.path.join(this_dir, d, d + ".py"), d + ".py")
-                zf.write(os.path.join(this_dir, d, d + ".xlsm"), d + ".xlsm")
+                zf.write(os.path.join(this_dir, d, f"{d}.py"), f"{d}.py")
+                zf.write(os.path.join(this_dir, d, f"{d}.xlsm"), f"{d}.xlsm")
                 if d == "database":
                     zf.write(
                         os.path.join(this_dir, d, "chinook.sqlite"), "chinook.sqlite"

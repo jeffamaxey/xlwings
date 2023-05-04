@@ -38,35 +38,17 @@ def _sql(query, *tables):
         types = [any(type(row[j]) is str for row in rows) for j in range(len(cols))]
         name = chr(65 + i)
 
-        stmt = "CREATE TABLE %s (%s)" % (
-            name,
-            ", ".join(
-                "'%s' %s" % (col, "STRING" if typ else "REAL")
-                for col, typ in zip(cols, types)
-            ),
-        )
+        stmt = f'''CREATE TABLE {name} ({", ".join(f"""'{col}' {"STRING" if typ else "REAL"}""" for col, typ in zip(cols, types))})'''
         c.execute(stmt)
 
         if rows:
-            stmt = "INSERT INTO %s VALUES %s" % (
-                name,
-                ", ".join(
-                    "(%s)"
-                    % ", ".join(
-                        conv_value(value, type) for value, typ in zip(row, types)
-                    )
-                    for row in rows
-                ),
-            )
+            stmt = f"""INSERT INTO {name} VALUES {", ".join(f'({", ".join(conv_value(value, type) for value, typ in zip(row, types))})' for row in rows)}"""
             # Fixes values like these:
             # sql('SELECT a FROM a', [['a', 'b'], ["""X"Y'Z""", 'd']])
             stmt = stmt.replace("\\'", "''")
             c.execute(stmt)
 
-    res = []
     c.execute(query)
-    res.append([x[0] for x in c.description])
-    for row in c:
-        res.append(list(row))
-
+    res = [[x[0] for x in c.description]]
+    res.extend(list(row) for row in c)
     return res

@@ -56,14 +56,12 @@ def rgb_to_hex(r, g, b):
 
 def get_duplicates(seq):
     seen = set()
-    duplicates = set(x for x in seq if x in seen or seen.add(x))
-    return duplicates
+    return {x for x in seq if x in seen or seen.add(x)}
 
 
 def np_datetime_to_datetime(np_datetime):
     ts = (np_datetime - np.datetime64("1970-01-01T00:00:00Z")) / np.timedelta64(1, "s")
-    dt_datetime = dt.datetime.utcfromtimestamp(ts)
-    return dt_datetime
+    return dt.datetime.utcfromtimestamp(ts)
 
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -115,18 +113,14 @@ def address_to_index_tuple(address):
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     """
     re_range_parts = re.compile(r"(\$?)([A-Z]{1,3})(\$?)(\d+)")
-    match = re_range_parts.match(address)
-    if match:
-        col_str = match.group(2)
-        row_str = match.group(4)
+    if match := re_range_parts.match(address):
+        col_str = match[2]
+        row_str = match[4]
 
-        # Convert base26 column string to number
-        expn = 0
-        col = 0
-        for char in reversed(col_str):
-            col += (ord(char) - ord("A") + 1) * (26**expn)
-            expn += 1
-
+        col = sum(
+            (ord(char) - ord("A") + 1) * (26**expn)
+            for expn, char in enumerate(reversed(col_str))
+        )
         return int(row_str), col
 
 
@@ -203,12 +197,14 @@ class VBAWriter:
 
     @classmethod
     def get_separator_index(cls, vba_line):
-        for index in range(cls.MAX_VBA_SPLITTED_LINE_LENGTH, 0, -1):
-            if " " == vba_line[index]:
-                return index
-        return (
-            cls.MAX_VBA_SPLITTED_LINE_LENGTH
-        )  # Best effort: split string at the maximum possible length
+        return next(
+            (
+                index
+                for index in range(cls.MAX_VBA_SPLITTED_LINE_LENGTH, 0, -1)
+                if vba_line[index] == " "
+            ),
+            cls.MAX_VBA_SPLITTED_LINE_LENGTH,
+        )
 
 
 def try_parse_int(x):
@@ -235,7 +231,7 @@ class VersionNumber:
         return ".".join(map(str, self.value))
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(str(self)))
+        return f"{self.__class__.__name__}({repr(str(self))})"
 
     def __eq__(self, other):
         if isinstance(other, VersionNumber):
@@ -278,13 +274,9 @@ def process_image(image, format, export_options):
         export_options = {"bbox_inches": "tight", "dpi": 200}
 
     if format == "vector":
-        if sys.platform.startswith("darwin"):
-            format = "pdf"
-        else:
-            format = "svg"
-
+        format = "pdf" if sys.platform.startswith("darwin") else "svg"
     temp_dir = os.path.realpath(tempfile.gettempdir())
-    filename = os.path.join(temp_dir, str(uuid.uuid4()) + "." + format)
+    filename = os.path.join(temp_dir, f"{str(uuid.uuid4())}.{format}")
 
     if image_type == "mpl":
         canvas = mpl.backends.backend_agg.FigureCanvas(image)
@@ -323,8 +315,7 @@ def read_user_config():
     if Path(xlwings.USER_CONFIG_FILE).is_file():
         with open(xlwings.USER_CONFIG_FILE, "r") as f:
             for line in f:
-                values = re.findall(r'"[^"]*"', line)
-                if values:
+                if values := re.findall(r'"[^"]*"', line):
                     config[values[0].strip('"').lower()] = os.path.expandvars(
                         values[1].strip('"')
                     )
@@ -371,7 +362,7 @@ def query_yes_no(question, default="yes"):
     elif default == "no":
         prompt = " [y/N] "
     else:
-        raise ValueError("invalid default answer: '%s'" % default)
+        raise ValueError(f"invalid default answer: '{default}'")
 
     while True:
         sys.stdout.write(question + prompt)
@@ -419,7 +410,7 @@ def prepare_sys_path(args_string):
         paths += args[6:]
 
     if paths:
-        sys.path[0:0] = list(set(paths))
+        sys.path[:0] = list(set(paths))
 
 
 @lru_cache(None)
@@ -516,7 +507,7 @@ def fullname_url_to_local_path(
                 f"Couldn't find the local OneDrive folder. Please configure the "
                 f"{onedrive_consumer_config_name} setting, see: xlwings.org/error."
             )
-        local_path = Path(root) / match.group(1)
+        local_path = Path(root) / match[1]
         if local_path.is_file():
             return str(local_path)
         else:
@@ -539,7 +530,7 @@ def fullname_url_to_local_path(
                 f"Please configure the {onedrive_commercial_config_name} setting, "
                 f"see: xlwings.org/error."
             )
-        local_path = Path(root) / match.group(1)
+        local_path = Path(root) / match[1]
         if local_path.is_file():
             return str(local_path)
         else:
@@ -574,7 +565,7 @@ def fullname_url_to_local_path(
             f"{sharepoint_config_name} setting, see: xlwings.org/error."
         )
     if match:
-        local_path = Path(root) / f"{match.group(1)} - Documents" / match.group(3)
+        local_path = Path(root) / f"{match[1]} - Documents" / match[3]
         if local_path.is_file():
             return str(local_path)
     # SharePoint Online & On-Premises (non-default mapping)
@@ -600,9 +591,9 @@ def to_pdf(
             filename, extension = os.path.splitext(obj.fullname)
             directory, _ = os.path.split(obj.fullname)
             if directory:
-                report_path = os.path.join(directory, filename + ".pdf")
+                report_path = os.path.join(directory, f"{filename}.pdf")
             else:
-                report_path = filename + ".pdf"
+                report_path = f"{filename}.pdf"
         if (include is not None) and (exclude is not None):
             raise ValueError("You can only use either 'include' or 'exclude'")
         # Hide sheets to exclude them from printing
@@ -622,10 +613,7 @@ def to_pdf(
         try:
             if include:
                 for sheet in obj.sheets:
-                    if (sheet.name in include) or (sheet.index in include):
-                        sheet.visible = True
-                    else:
-                        sheet.visible = False
+                    sheet.visible = sheet.name in include or sheet.index in include
             if exclude or exclude_by_name:
                 exclude = [] if exclude is None else exclude
                 for sheet in obj.sheets:
@@ -660,9 +648,9 @@ def to_pdf(
             else:
                 raise ValueError(f"Object of type {type(obj)} are not supported.")
             if directory:
-                report_path = os.path.join(directory, filename + ".pdf")
+                report_path = os.path.join(directory, f"{filename}.pdf")
             else:
-                report_path = filename + ".pdf"
+                report_path = f"{filename}.pdf"
         obj.impl.to_pdf(os.path.realpath(report_path), quality=quality)
 
     if layout:
@@ -682,43 +670,43 @@ def get_url_to_mount():
     """Windows stores the mount points in the registry. This helps but still isn't
     foolproof.
     """
-    if sys.platform.startswith("win"):
-        import winreg
-        from winreg import HKEY_CURRENT_USER, KEY_READ
-
-        root = r"SOFTWARE\SyncEngines\Providers\OneDrive"
-        url_to_mount = {}
-        try:
-            with winreg.OpenKey(HKEY_CURRENT_USER, root, 0, KEY_READ) as root_key:
-                for i in range(0, winreg.QueryInfoKey(root_key)[0]):
-                    subfolder = winreg.EnumKey(root_key, i)
-                    with winreg.OpenKey(
-                        HKEY_CURRENT_USER, f"{root}\\{subfolder}", 0, KEY_READ
-                    ) as key:
-                        try:
-                            mount_point, _ = winreg.QueryValueEx(key, "MountPoint")
-                            url_namespace, _ = winreg.QueryValueEx(key, "URLNamespace")
-                            url_to_mount[url_namespace] = mount_point
-                        except FileNotFoundError:
-                            pass
-        except FileNotFoundError:
-            pass
-        return url_to_mount
-    else:
+    if not sys.platform.startswith("win"):
         return {}
+    import winreg
+    from winreg import HKEY_CURRENT_USER, KEY_READ
+
+    root = r"SOFTWARE\SyncEngines\Providers\OneDrive"
+    url_to_mount = {}
+    try:
+        with winreg.OpenKey(HKEY_CURRENT_USER, root, 0, KEY_READ) as root_key:
+            for i in range(0, winreg.QueryInfoKey(root_key)[0]):
+                subfolder = winreg.EnumKey(root_key, i)
+                with winreg.OpenKey(
+                    HKEY_CURRENT_USER, f"{root}\\{subfolder}", 0, KEY_READ
+                ) as key:
+                    try:
+                        mount_point, _ = winreg.QueryValueEx(key, "MountPoint")
+                        url_namespace, _ = winreg.QueryValueEx(key, "URLNamespace")
+                        url_to_mount[url_namespace] = mount_point
+                    except FileNotFoundError:
+                        pass
+    except FileNotFoundError:
+        pass
+    return url_to_mount
 
 
 def search_local_sharepoint_path(url, root, sharepoint_config, sharepoint_config_name):
     book_name = url.split("/")[-1]
-    local_book_paths = []
-    for path in Path(root).rglob("[!~$]*.xls*"):
-        if path.name.lower() == book_name.lower():
-            local_book_paths.append(path)
+    local_book_paths = [
+        path
+        for path in Path(root).rglob("[!~$]*.xls*")
+        if path.name.lower() == book_name.lower()
+    ]
     if len(local_book_paths) == 1:
         return str(local_book_paths[0])
-    elif len(local_book_paths) == 0:
+    elif not local_book_paths:
         raise xlwings.XlwingsError(
-            f"Couldn't find your SharePoint file locally, see: xlwings.org/error"
+            "Couldn't find your SharePoint file locally, see: xlwings.org/error"
         )
     else:
         raise xlwings.XlwingsError(

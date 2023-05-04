@@ -37,9 +37,7 @@ app1.activate()
 
 
 def generate_get_endpoint(endpoint):
-    docs = []
-    docs.append(".. http:get:: " + endpoint.replace("path:", ""))
-    docs.append("")
+    docs = [".. http:get:: " + endpoint.replace("path:", ""), ""]
     url = BASE_URL + endpoint.replace("<pid>", str(wb1.app.pid)).replace(
         "<book_name_or_ix>", wb1.name
     ).replace("<chart_name_or_ix>", "0").replace("<name>", "myname2").replace(
@@ -56,12 +54,8 @@ def generate_get_endpoint(endpoint):
         "<address>", "A1:B2"
     )
     rv = requests.get(url)
-    docs.append("**Example response**:")
-    docs.append("")
-    docs.append(".. sourcecode:: json")
-    docs.append("")
-    for i in rv.text.splitlines():
-        docs.append("    " + i)
+    docs.extend(("**Example response**:", "", ".. sourcecode:: json", ""))
+    docs.extend(f"    {i}" for i in rv.text.splitlines())
     docs.append("")
     return docs
 
@@ -71,19 +65,20 @@ get_apps_urls = []
 get_books_urls = []
 get_book_urls = []
 for rule in api.url_map.iter_rules():
-    if "GET" in rule.methods:
-        if rule.rule.startswith("/book/"):
+    if rule.rule.startswith("/book/"):
+        if "GET" in rule.methods:
             get_book_urls.append(rule.rule)
-        elif rule.rule.startswith("/books"):
+    elif rule.rule.startswith("/books"):
+        if "GET" in rule.methods:
             get_books_urls.append(rule.rule)
-        elif rule.rule.startswith("/apps"):
+    elif rule.rule.startswith("/apps"):
+        if "GET" in rule.methods:
             get_apps_urls.append(rule.rule)
 
 get_apps_urls = sorted(get_apps_urls)
 get_books_urls = sorted(get_books_urls)
 get_book_urls = sorted(get_book_urls)
 
-text = []
 intro = """.. _rest_api:
 
 REST API
@@ -232,30 +227,15 @@ Endpoint details
 ----------------
 
 """
-text.append(intro)
-text.append("")
-
-text.append(".. _book:")
-text.append("")
-text.append("/book")
-text.append("*****")
-text.append("")
+text = [intro, "", ".. _book:", "", "/book", "*****", ""]
 for url in get_book_urls:
     text.extend(generate_get_endpoint(url))
 
-text.append(".. _books:")
-text.append("")
-text.append("/books")
-text.append("******")
-text.append("")
+text.extend((".. _books:", "", "/books", "******", ""))
 for url in get_books_urls:
     text.extend(generate_get_endpoint(url))
 
-text.append(".. _apps:")
-text.append("")
-text.append("/apps")
-text.append("*****")
-text.append("")
+text.extend((".. _apps:", "", "/apps", "*****", ""))
 for url in get_apps_urls:
     text.extend(generate_get_endpoint(url))
 

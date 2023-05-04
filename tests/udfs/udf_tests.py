@@ -432,11 +432,10 @@ if pd:
     @xw.func
     @xw.ret(pd.DataFrame, index=2, header=False)
     def write_df_0header_2index():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
             index=pd.MultiIndex.from_arrays([["a", "a", "b"], [1.0, 2.0, 1.0]]),
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=1, header=1)
@@ -471,12 +470,11 @@ if pd:
 
     @xw.func
     def write_df_1header_1unnamedindex():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
             index=[1.0, 2.0],
             columns=["c", "d", "c"],
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=False, header=2)
@@ -490,11 +488,10 @@ if pd:
     @xw.func
     @xw.ret(pd.DataFrame, index=False, header=2)
     def write_df_2header_0index():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
             columns=pd.MultiIndex.from_arrays([["a", "a", "b"], ["c", "d", "c"]]),
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=1, header=2)
@@ -529,12 +526,11 @@ if pd:
 
     @xw.func
     def write_df_2header_1unnamedindex():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
             index=[1.0, 2.0],
             columns=pd.MultiIndex.from_arrays([["a", "a", "b"], ["c", "d", "c"]]),
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=2, header=2)
@@ -550,14 +546,13 @@ if pd:
 
     @xw.func
     def write_df_2header_2namedindex():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
             index=pd.MultiIndex.from_arrays(
                 [["a", "a", "b"], [1.0, 2.0, 1.0]], names=["x1", "x2"]
             ),
             columns=pd.MultiIndex.from_arrays([["a", "a", "b"], ["c", "d", "c"]]),
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=2, header=2)
@@ -571,12 +566,11 @@ if pd:
 
     @xw.func
     def write_df_2header_2unnamedindex():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
             index=pd.MultiIndex.from_arrays([["a", "a", "b"], [1.0, 2.0, 1.0]]),
             columns=pd.MultiIndex.from_arrays([["a", "a", "b"], ["c", "d", "c"]]),
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame, index=2, header=1)
@@ -592,14 +586,13 @@ if pd:
 
     @xw.func
     def write_df_1header_2namedindex():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
             index=pd.MultiIndex.from_arrays(
                 [["a", "a", "b"], [1.0, 2.0, 1.0]], names=["x1", "x2"]
             ),
             columns=["a", "d", "c"],
         )
-        return df
 
     @xw.func
     @xw.arg("x", pd.DataFrame)
@@ -613,12 +606,11 @@ if pd:
 
     @xw.func
     def write_df_date_index():
-        df = pd.DataFrame(
+        return pd.DataFrame(
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
             index=[datetime(1999, 12, 13), datetime(1999, 12, 14)],
             columns=["c", "d", "c"],
         )
-        return df
 
     @xw.func
     def read_workbook_caller():

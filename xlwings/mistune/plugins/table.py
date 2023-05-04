@@ -20,7 +20,7 @@ def parse_table(self, m, state):
 
     text = re.sub(r'(?: *\| *)?\n$', '', m.group(3))
     rows = []
-    for i, v in enumerate(text.split('\n')):
+    for v in text.split('\n'):
         v = re.sub(r'^ *\| *| *\| *$', '', v)
         rows.append(_process_row(v, aligns))
 
@@ -32,10 +32,7 @@ def parse_nptable(self, m, state):
     thead, aligns = _process_table(m.group(1), m.group(2))
 
     text = re.sub(r'\n$', '', m.group(3))
-    rows = []
-    for i, v in enumerate(text.split('\n')):
-        rows.append(_process_row(v, aligns))
-
+    rows = [_process_row(v, aligns) for v in text.split('\n')]
     children = [thead, {'type': 'table_body', 'children': rows}]
     return {'type': 'table', 'children': children}
 
@@ -115,16 +112,12 @@ def render_html_table_row(text):
 
 
 def render_html_table_cell(text, align=None, is_head=False):
-    if is_head:
-        tag = 'th'
-    else:
-        tag = 'td'
-
-    html = '  <' + tag
+    tag = 'th' if is_head else 'td'
+    html = f'  <{tag}'
     if align:
-        html += ' style="text-align:' + align + '"'
+        html += f' style="text-align:{align}"'
 
-    return html + '>' + text + '</' + tag + '>\n'
+    return f'{html}>{text}</{tag}' + '>\n'
 
 
 def render_ast_table_cell(children, align=None, is_head=False):

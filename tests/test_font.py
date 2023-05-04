@@ -20,9 +20,9 @@ def test_range_font_bold(app):
     sheet["A1"].value = "text"
     assert sheet["A1"].font.bold is False
     sheet["A1"].font.bold = True
-    assert sheet["A1"].font.bold is True
+    assert sheet["A1"].font.bold
     sheet["A1"].font.bold = False
-    assert sheet["A1"].font.bold is False
+    assert not sheet["A1"].font.bold
 
 
 def test_range_font_italic(app):
@@ -30,9 +30,9 @@ def test_range_font_italic(app):
     sheet["A1"].value = "text"
     assert sheet["A1"].font.italic is False
     sheet["A1"].font.italic = True
-    assert sheet["A1"].font.italic is True
+    assert sheet["A1"].font.italic
     sheet["A1"].font.italic = False
-    assert sheet["A1"].font.italic is False
+    assert not sheet["A1"].font.italic
 
 
 def test_range_font_size(app):
@@ -66,9 +66,9 @@ def test_shape_font_bold(app):
     shape.text = "text"
     assert shape.font.bold is False
     shape.font.bold = True
-    assert shape.font.bold is True
+    assert shape.font.bold
     shape.font.bold = False
-    assert shape.font.bold is False
+    assert not shape.font.bold
 
 
 def test_shape_font_italic(app):
@@ -76,9 +76,9 @@ def test_shape_font_italic(app):
     shape.text = "text"
     assert shape.font.italic is False
     shape.font.italic = True
-    assert shape.font.italic is True
+    assert shape.font.italic
     shape.font.italic = False
-    assert shape.font.italic is False
+    assert not shape.font.italic
 
 
 def test_shape_font_size(app):
